@@ -781,13 +781,13 @@ sub get_page {
     $found = $want[0];
 
     if (@want > 1 && $query_all) {
-	local($ans, $i);
+	local($ans);
 
 	select(STDERR);
 
 	print "There are ", 0+@want,
 	    " manual entries available for $target:\n";
-	for ($i = 0; $i <= $#want; $i++) {
+	for my $i (0 .. $#want) {
 	    printf "%3d\t%s\n", $i+1, $want[$i];
 	}
 	{
@@ -1295,7 +1295,7 @@ sub load_index {
 sub getidx {
     local($manpage) = @_;
     local($is_mh);
-    local($_, $i, %lines, %sec, $sname, @snames);
+    local($_, %lines, %sec, $sname, @snames);
     local(@retlist, $maxlen, $header, @idx , @st_man, @st_idx);
     # global no_idx_file, idx_file
 
@@ -1376,7 +1376,7 @@ sub getidx {
     $line = sprintf(sprintf("Idx  %%-%ds Lines\n", $maxlen + 2), $header);
     @retlist = ($line);
 
-    for ($i = 1; $i <= $#snames; $i++)  {
+    for my $i (1 .. $#snames)  {
 	push(@retlist, sprintf($mask, $i, $snames[$i], $lines{$snames[$i]}));
     }
     if (!$no_idx_file) {
