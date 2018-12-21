@@ -142,7 +142,7 @@ sub extract_entry
   {
    if ($typ != 040)
     {
-     printf "%o $name\n",$hdr->{'mode'};
+     printf "%o %s\n",$hdr->{'mode'},$name;
     }
    read_data($read,$hdr,undef);
    return;
