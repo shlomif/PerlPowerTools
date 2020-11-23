@@ -11,6 +11,9 @@ License: perl
 
 =cut
 
+use strict;
+use warnings;
+use 5.014;
 
 #
 # tac - concatenate and print files in reverse
@@ -50,10 +53,9 @@ END {
 package
 	IO::Tac; # hide from PAUSE
 
-use strict;
-use Carp;
-use Symbol;
-use Fcntl;
+use Carp qw/ confess /;
+use Symbol qw/ gensym /;
+use Fcntl qw/ O_BINARY O_RDONLY /;
 
 use Fcntl 'SEEK_CUR';
 sub systell { sysseek($_[0], 0, SEEK_CUR) }
