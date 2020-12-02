@@ -426,6 +426,10 @@ Attach separator to the beginning of the record that it precedes in the file.
 
 Read files in binary mode.
 
+=item -n
+
+Number the lines (similar to C<tac | cat -n | tac>).
+
 =item -r
 
 The separator is a regular expression.
