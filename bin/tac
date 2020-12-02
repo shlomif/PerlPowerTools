@@ -169,8 +169,13 @@ sub READLINE
     $\ = pop @{ *$self->{ends} } if *$self->{autoline};
 
     my $ret = pop @{ *$self->{lines} };
+    if (not defined$ret)
+    {
+        return $ret;
+    }
     if (*$self->{number})
     {
+        die if !defined$ret;
         return sprintf("%6d\t%s", --(*$self)->{line_idx}, $ret);
     }
     else
@@ -180,6 +185,31 @@ sub READLINE
 }
 
 sub get_lines
+{
+    my $self = shift;
+    my $lines;
+    if (*$self->{number})
+    {
+        my @lines;
+        while (@{(*$self)->{files}})
+        {
+            unshift @lines, @{$self->real_get_lines() // []};
+        }
+        $lines = ((*$self)->{lines} = \@lines);
+    }
+    else
+    {
+        $lines = $self->real_get_lines();
+        if (not defined$lines)
+        {
+            return $lines;
+        }
+    }
+    *$self->{line_idx} = 1 + scalar( @$lines);
+    return $lines;
+}
+
+sub real_get_lines
 {
     my $self = shift;
 
@@ -372,7 +402,6 @@ sub get_lines
     # For autoline mode.
     *$self->{ends} = \@ends;
 
-    *$self->{line_idx} = 1 + scalar( @lines);
     \@lines;
 }
 
