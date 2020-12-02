@@ -23,10 +23,11 @@ use Getopt::Std qw/  getopts /;
 
 my $VERSION = '0.17';
 
-getopts( 'bBrs:S:', \my %opts );
+getopts( 'bBnrs:S:', \my %opts );
 my %long = qw/
     b before
     B binary
+    n number
     r regex
     s separator
     S size
@@ -66,7 +67,7 @@ sub new
 {
     my $class = shift;
     my $fh    = gensym;
-    tie *$fh, $class, $fh, @_;
+    return (tie *$fh, $class, $fh, @_);
 }
 
 sub TIEHANDLE
@@ -167,7 +168,15 @@ sub READLINE
     $. = ++*$self->{count}       if *$self->{autocount};
     $\ = pop @{ *$self->{ends} } if *$self->{autoline};
 
-    pop @{ *$self->{lines} };
+    my $ret = pop @{ *$self->{lines} };
+    if (*$self->{number})
+    {
+        return sprintf("%6d\t%s", --(*$self)->{line_idx}, $ret);
+    }
+    else
+    {
+        return $ret;
+    }
 }
 
 sub get_lines
@@ -363,6 +372,7 @@ sub get_lines
     # For autoline mode.
     *$self->{ends} = \@ends;
 
+    *$self->{line_idx} = 1 + scalar( @lines);
     \@lines;
 }
 

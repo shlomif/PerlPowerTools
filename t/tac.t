@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 
 sub _lines2re
 {
@@ -171,6 +171,25 @@ test_tac(
         flags => [qw/ -rs "[az]" /],
         lines => [ split /\n/, <<'EOF'],
 threeatwoaonea
+EOF
+    }
+);
+
+# TEST
+test_tac(
+    {
+        blurb => "-n flag",
+        files => [ qw( t/data/sort/three-words.txt ), ],
+        flags => [qw/ -n /],
+        lines => [ split /\n/, <<'EOF'],
+     8	column by pencil
+     7	row by row
+     6	mooing yodelling dog
+     5	mooing persistent cat
+     4	a little love
+     3	the meta protocol
+     2	based little mint
+     1	the wonderful unicorn
 EOF
     }
 );
