@@ -34,9 +34,9 @@ my %long = qw/
 %opts = map {$long{$_}, $opts{$_}} keys %opts;
 
 if (defined $opts{separator} && $opts{regex}) {
-    for ($opts{separator}) {
-        s!^/(.*)/\z!$1!s;
-        $_ = qr/$_/;
+    foreach my $sep ($opts{separator}) {
+        $sep =~ s!^/(.*)/\z!$1!s;
+        $sep = qr/$sep/;
     }
 }
 
@@ -174,7 +174,7 @@ sub get_lines {
         *$self->{EOF} = 0;
     }
 
-    local $_ = '';
+    my $line = '';
     my %re   = %{*$self->{RE}};
     my $size = *$self->{size};
     my $fh   = *$self->{files}[0][1];
@@ -183,10 +183,10 @@ sub get_lines {
     if (*$self->{files}[0][0] eq '-') {
         # Next chunk of data comes from STDIN.
         local $/;
-        $_ = <$fh>;
+        $line = <$fh>;
         *$self->{EOF}++;
         if (*$self->{record}) {
-            unshift @lines, substr $_, -$size, $size, '' while length;
+            unshift @lines, substr $line, -$size, $size, '' while length;
             return \@lines;
         }
     } else {
@@ -199,23 +199,23 @@ sub get_lines {
             if ($tell <= $size ) {
                 if ($tell) {
                     sysseek $fh, 0, 0       or confess "Bad seek on [$file]: $!";
-                    sysread $fh, $_, $tell  or confess "Bad read on [$file]: $!";
+                    sysread $fh, $line, $tell  or confess "Bad read on [$file]: $!";
                 }
                 *$self->{EOF}++, last CHUNK;
             }
             sysseek $fh, -$size, 1      or confess "Bad seek on [$file]: $!";
-            sysread $fh, $_, $size      or confess "Bad read on [$file]: $!";
+            sysread $fh, $line, $size      or confess "Bad read on [$file]: $!";
             /$re{broken}/   and $size += 10,                redo CHUNK;
             not /$re{RS}/   and $size += *$self->{size},    redo CHUNK;
         }
         unless (*$self->{EOF}) {
             sysseek $fh, -$size, 1      or confess "Bad seek on [$file]: $!";
         }
-        return [$_] if *$self->{record};
+        return [$line] if *$self->{record};
     }
 
     # Append incomplete line from last chunk.
-    $_ .= *$self->{scrap};
+    $line .= *$self->{scrap};
 
     # Parse chunk for records (a..c) and separators (1..3).  The last
     # record of a chunk may be missing its separator.
@@ -223,7 +223,7 @@ sub get_lines {
     #   Half chunk:     a1b2c
 
     if (*$self->{chomp}) {
-        @lines = split /$re{RS}/, $_, -1;
+        @lines = split /$re{RS}/, $line, -1;
             # Full:  a b c ''
             # Half:  a b c
         *$self->{scrap} = *$self->{EOF} ? '' : shift @lines;
@@ -232,7 +232,7 @@ sub get_lines {
             # Half:  b c
     } elsif (*$self->{autoline}) {
         if (defined *$self->{autoline_ors}) {
-            @lines = split /$re{RS}/, $_, -1;
+            @lines = split /$re{RS}/, $line, -1;
                 # Full:  a b c ''
                 # Half:  a b c
             *$self->{scrap} = *$self->{EOF} ? '' : shift @lines;
@@ -242,7 +242,7 @@ sub get_lines {
                 # Full:  [a] b c + ors ors
                 # Half:  [a] b c + ors ''
         } else {
-            my @array = split /$re{capture}/, $_, -1;
+            my @array = split /$re{capture}/, $line, -1;
                 # Full:  a 1 b 2 c 3 ''
                 # Half:  a 1 b 2 c
             *$self->{scrap} = *$self->{EOF} ? '' : join '', splice @array, 0, 2;
@@ -253,22 +253,22 @@ sub get_lines {
         }
     } elsif (*$self->{before}) {
         if (*$self->{paragraph}) {
-            @lines = split /$re{RS}/, $_, -1;
+            @lines = split /$re{RS}/, $line, -1;
                 # Full:  a b c ''
                 # Half:  a b c
             if (*$self->{EOF}) {
                 *$self->{scrap} = '';
                 my $first = shift @lines;
-                @lines = map "\n\n$_", @lines;
+                @lines = map { "\n\n$_" } @lines;
                 unshift @lines, $first;
             } else {
                 *$self->{scrap} = shift @lines;
-                @lines = map "\n\n$_", @lines;
+                @lines = map { "\n\n$_" } @lines;
             }
                 # Full:  [a] \n\nb \n\nc \n\n
                 # Half:  [a] \n\nb \n\nc
         } else {
-            my @array = split /$re{capture}/, $_, -1;
+            my @array = split /$re{capture}/, $line, -1;
                 # Full:  a 1 b 2 c 3 ''
                 # Half:  a 1 b 2 c
             if (*$self->{EOF}) {
@@ -285,17 +285,17 @@ sub get_lines {
         }
     } else {
         if (*$self->{paragraph}) {
-            @lines = split /$re{RS}/, $_, -1;
+            @lines = split /$re{RS}/, $line, -1;
                 # Full:  a b c ''
                 # Half:  a b c
             *$self->{scrap} = *$self->{EOF} ? '' : shift @lines;
             my $last = pop @lines;
-            @lines = map "$_\n\n", @lines;
+            @lines = map { "$_\n\n" } @lines;
             push @lines, $last if length $last;
                 # Full:  [a] b\n\n c\n\n
                 # Half:  [a] b\n\n c
         } else {
-            @lines = /$re{line}/g;
+            @lines = ($line =~ /$re{line}/g);
             *$self->{scrap} = *$self->{EOF} ? '' : shift @lines;
                 # Full:  [a1] b2 c3
                 # Half:  [a1] b2 c
